@@ -13,7 +13,7 @@
 #   --dry-run              só mostra o que faria.
 #
 # O que copia:
-#   skills/*            -> <base>/skills/            (factory*, tlc-spec-lean, tlc-discover)
+#   skills/*            -> <base>/skills/            (factory*, tlc-discover, tlc-spec-lean, tlc-plan, tlc-implement)
 #   agents/<cli>/*      -> <base>/agents/            (.json+prompts p/ kiro; .md p/ claude)
 # Para o alvo claude, reescreve caminhos .kiro/ -> .claude/ nos arquivos de skill copiados.
 set -euo pipefail

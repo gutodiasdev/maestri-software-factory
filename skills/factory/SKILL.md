@@ -21,6 +21,7 @@ Você é o **único** que escreve `job.json`. Regras de ouro: arquivos são a ve
 
 - **MEU_NOME**: o nome em `You:` de `maestri list`. Vai em toda tarefa, para o agente responder.
 - **CFG**: leia o bloco `factory.*` de `AGENTS.md` (plan_gate, auto_land, max_reworks, base_branch, release_branch). `base_branch: current` ⇒ `git branch --show-current` no Ground.
+- **SKILLS por fase**: leia `factory.phases.<fase>.skill` de `AGENTS.md` para resolver **SKILL_DISCOVER**, **SKILL_PLAN**, **SKILL_BUILD**. Linha ausente ⇒ default: `discover=tlc-discover`, `plan=tlc-spec-lean`, `build=tlc-spec-lean`. Cada fase injeta `SKILL=<nome>` na tarefa do agente (ver *Mensagem de tarefa*), e os gates que você roda dependem da skill — veja *Contratos de fase* abaixo.
 - **TIPO/BRANCH**: a feature normalmente vem do intake. Procure a linha desta issue em `.specs/factory/selected.tsv` (TAB: `IID⟶TÍTULO⟶TYPE⟶BRANCH`):
   - achou ⇒ use `TYPE` (`feat|release|hotfix`) e `BRANCH` dela.
   - não achou ⇒ pergunte ao usuário o tipo e monte: `feat` ⇒ `feat/<slug>`; `release` ⇒ `release-v<versão>`; `hotfix` ⇒ `hotfix-v<versão>`. **Nunca invente versão**: para release/hotfix sem versão, pergunte; sem resposta, escale (**6b**).
@@ -30,7 +31,7 @@ Você é o **único** que escreve `job.json`. Regras de ouro: arquivos são a ve
   - `hotfix` ⇒ `main`.
 - **FLOOR_PATH**: caminho do clone, da linha do floor em `maestri floor list`. **JOB_DIR** (relativo ao floor): `.specs/factory/jobs/<id>`. Você lê/escreve em `<FLOOR_PATH>/<JOB_DIR>/…` a partir do Ground.
 - **Mensagem de tarefa** (cabeçalho fixo, depois a tarefa):
-  `JOB_ID=<id> JOB_DIR=<JOB_DIR> FEATURE=<slug> BASE=<sha> ROUND=<n> MAESTRO="<MEU_NOME>"` + `TASK: …` + a linha final *"Ao terminar, responda com `maestri ask "<MEU_NOME>" "<resumo>"` conforme o protocolo da fábrica."*
+  `JOB_ID=<id> JOB_DIR=<JOB_DIR> FEATURE=<slug> BASE=<sha> ROUND=<n> SKILL=<skill da fase> MAESTRO="<MEU_NOME>"` + `TASK: …` + a linha final *"Ao terminar, responda com `maestri ask "<MEU_NOME>" "<resumo>"` conforme o protocolo da fábrica."* (`SKILL` = SKILL_PLAN na spec, SKILL_BUILD no build; o agente lê `.kiro/skills/<SKILL>/SKILL.md` e segue o contrato daquela fase.)
 - **Codinomes**: invente um por agente (curto, sem repetir o papel). Registre `papel → codinome` em `job.json.agents`.
 - **Status do floor** a cada transição: `maestri floor status "<etapa: o que acontece>" --state working --progress k/5 --floor "<floor>"` (etapas: 1 spec, 2 build, 3 review, 4 approve, 5 pronto). `--state review`/`blocked`/`done` também notificam o usuário: use só quando verdade.
 - **job.json** (modelo; reescreva a cada transição, e atualize a Note do job no painel kanban, veja *Painel* abaixo):
@@ -41,6 +42,21 @@ Você é o **único** que escreve `job.json`. Regras de ouro: arquivos são a ve
     "round": 1, "reworks": 0, "agents": {"spec-writer": "", "builder": "", "approver": ""},
     "reviews": {"security": "", "api": "", "data": "", "code": ""}, "decision": "", "updated": "<ISO>" }
   ```
+
+## Contratos de fase (qual gate rodar por skill)
+
+A skill de cada fase define o artefato, o token de pronto e **se há validador** para você rodar. Resolva a skill (SKILL_PLAN/SKILL_BUILD) e use a linha correspondente. Skill desconhecida ⇒ trate como a linha genérica: confira que o artefato existe e que o token é a 1ª linha, e **pule os validadores**.
+
+| Fase | Skill | Artefato(s) que você confere | Token (1ª linha) | Validadores que você roda (exit 0) |
+| --- | --- | --- | --- | --- |
+| plan | `tlc-spec-lean` (default) | `.specs/features/<slug>/plan.md` + `checks.md` e `JOB_DIR/spec.md` | `SPEC: READY` em `spec.md` | `validate_plan.py <slug>` e `validate_checks.py <slug>` |
+| plan | `tlc-plan` | `.tasks/<slug>.md` e `JOB_DIR/spec.md` | `SPEC: READY` em `spec.md` | nenhum (sem scripts — pule o gate) |
+| plan | *(outra)* | `JOB_DIR/spec.md` | `SPEC: READY` | nenhum |
+| build | `tlc-spec-lean` (default) | `JOB_DIR/build.md` + commits | `BUILD: DONE` | `check_commit.py` é do builder; você confere commits + working tree limpo |
+| build | `tlc-implement` | `.checks/<slug>.md` + `JOB_DIR/build.md` + commits | `BUILD: DONE` | nenhum (sem scripts — pule o gate) |
+| build | *(outra)* | `JOB_DIR/build.md` + commits | `BUILD: DONE` | nenhum |
+
+Caminho dos validadores: `python3 .kiro/skills/<SKILL_PLAN>/scripts/<nome>.py <slug> --root <FLOOR_PATH>` (só existem na `tlc-spec-lean`). **Verify é sempre uma verificação independente** (agente novo, nunca o builder), disparada pelo revisor de código (passo 3): na `tlc-spec-lean` é o Verifier dela + `validate_verification.py`; numa skill de build sem validador (ex.: `tlc-implement`) é o Verifier da própria skill sobre o artefato de checks dela, sem o script. A `tlc-spec-lean` fica sempre instalada por ser o default de plan/build e trazer os validadores.
 
 ## 0. Abrir o job
 
@@ -55,17 +71,17 @@ Você é o **único** que escreve `job.json`. Regras de ouro: arquivos são a ve
 ## 1. Spec
 
 1. `maestri recruit "<codinome>" --preset "Factory Spec Writer" --floor "<floor>"`. Espere alguns segundos (o agente está subindo).
-2. `maestri ask "<codinome>" "<cabeçalho> TASK: escreva plan.md e checks.md da feature abaixo com o tlc-spec-lean e o resumo JOB_DIR/spec.md. FEATURE_TEXT: <$ARGUMENTS>"`.
-3. Ao chegar a resposta, **leia** `<FLOOR_PATH>/<JOB_DIR>/spec.md`: 1ª linha `SPEC: READY`? Rode você mesmo os gates (com `--root`): `python3 .kiro/skills/tlc-spec-lean/scripts/validate_plan.py <slug> --root <FLOOR_PATH>` e `validate_checks.py <slug> --root <FLOOR_PATH>` — **exit 0** ambos. (Se o spec-writer escolheu o atalho só-`checks.md`, `validate_plan` não se aplica: confira o motivo em `spec.md`.)
+2. `maestri ask "<codinome>" "<cabeçalho SKILL=SKILL_PLAN> TASK: escreva a spec da feature abaixo com a skill de plan (SKILL_PLAN; default tlc-spec-lean ⇒ plan.md + checks.md) e o resumo JOB_DIR/spec.md. Se a feature chegou crua, formate-a antes com a skill de discover (SKILL_DISCOVER). FEATURE_TEXT: <$ARGUMENTS>"`.
+3. Ao chegar a resposta, aplique o **contrato da fase plan** (tabela *Contratos de fase*) para SKILL_PLAN: **leia** `<FLOOR_PATH>/<JOB_DIR>/spec.md` e confira o token (`SPEC: READY` na 1ª linha). Se SKILL_PLAN tem validadores (só a `tlc-spec-lean`), rode-os você mesmo com `--root`: `python3 .kiro/skills/<SKILL_PLAN>/scripts/validate_plan.py <slug> --root <FLOOR_PATH>` e `validate_checks.py <slug> --root <FLOOR_PATH>` — **exit 0** ambos. (Se o spec-writer escolheu o atalho só-`checks.md`, `validate_plan` não se aplica: confira o motivo em `spec.md`.) Skill sem validador ⇒ confira só artefato + token.
    - `BLOCKED:`/exit ≠ 0 ⇒ **uma** nova tentativa (`maestri ask` com o erro). Persistindo ⇒ vá a **6b (escalar)**.
 4. `maestri dismiss "<codinome>"`.
-5. **Plan gate**: se `factory.plan_gate: human` ⇒ stage `plan-review`; `maestri floor status "plan pronto — revise .specs/features/<slug>/plan.md e rode /factory-continue <id>" --state review --floor "<floor>"`; `maestri notify "Job <id>: plan aguardando sua revisão"`; **PARE aqui**. (Retomado por `/factory-continue`.) Se `auto`, siga.
+5. **Plan gate**: se `factory.plan_gate: human` ⇒ stage `plan-review`; `maestri floor status "plan pronto — revise o artefato de plan (.specs/features/<slug>/plan.md na tlc-spec-lean; .tasks/<slug>.md na tlc-plan) e rode /factory-continue <id>" --state review --floor "<floor>"`; `maestri notify "Job <id>: plan aguardando sua revisão"`; **PARE aqui**. (Retomado por `/factory-continue`.) Se `auto`, siga.
 
 ## 2. Build
 
-1. stage `build`, status `2/5`. Leia o `## Handoff` de `checks.md`: `one builder` ⇒ um lote; `handoff` ⇒ lotes sequenciais **só quando o anterior fecha verde** (testes+build passam).
-2. `maestri recruit "<codinome>" --preset "Factory Builder" --floor "<floor>"`; `maestri ask "<codinome>" "<cabeçalho> TASK: implemente [BATCH n de m | tudo] conforme plan.md/checks.md (tlc-spec-lean BUILD). Commits convencionais na branch do floor. Não dispare Verifier nem revisores. Nunca faça git push."`.
-3. Ao terminar cada lote, **confirme**: `build.md` com 1ª linha `BUILD: DONE`; `git -C <FLOOR_PATH> log --oneline <BASE>..HEAD` tem commits; `git -C <FLOOR_PATH> status --porcelain --untracked-files=no` vazio (sujo ⇒ peça ao builder para commitar). `BUILD: BLOCKED` ⇒ **6b**.
+1. stage `build`, status `2/5`. Leia o `## Handoff` da spec de checks (`checks.md` na `tlc-spec-lean`; `.checks/<slug>.md` na `tlc-implement`): `one builder` ⇒ um lote; `handoff` ⇒ lotes sequenciais **só quando o anterior fecha verde** (testes+build passam).
+2. `maestri recruit "<codinome>" --preset "Factory Builder" --floor "<floor>"`; `maestri ask "<codinome>" "<cabeçalho SKILL=SKILL_BUILD> TASK: implemente [BATCH n de m | tudo] conforme a spec da fase de plan (BUILD da skill SKILL_BUILD; default tlc-spec-lean). Commits convencionais na branch do floor. Não dispare Verifier nem revisores. Nunca faça git push."`.
+3. Ao terminar cada lote, aplique o **contrato da fase build** para SKILL_BUILD: `build.md` com 1ª linha `BUILD: DONE`; `git -C <FLOOR_PATH> log --oneline <BASE>..HEAD` tem commits; `git -C <FLOOR_PATH> status --porcelain --untracked-files=no` vazio (sujo ⇒ peça ao builder para commitar). `BUILD: BLOCKED` ⇒ **6b**.
 4. **Não dispense o builder** (a sessão precisa sobreviver para o rework). stage → `review`, `round = 1`.
 
 ## 3. Review (paralelo) — rodada N
@@ -73,7 +89,7 @@ Você é o **único** que escreve `job.json`. Regras de ouro: arquivos são a ve
 1. Recrute **4 revisores novos** no floor (independência: nunca reuse os da rodada anterior): presets Security, API, Data, Code. Opcional, pois o usuário pediu o visual: `maestri band create "Reviewers <id>" "<a>" "<b>" "<c>" "<d>" --without-me`.
 2. `mkdir -p <FLOOR_PATH>/<JOB_DIR>/round-<N>`.
 3. Dispare os 4 **de uma vez**, que já é o "espera todos" nativo:
-   `maestri ask --batch '{"<a>": "<cabeçalho ROUND=N> TASK: revise pelo ângulo security → JOB_DIR/round-N/review-security.md", "<b>": "… api → review-api.md", "<c>": "… data → review-data.md", "<d>": "… code (Verifier tlc + code review) → review-code.md e .specs/features/<slug>/verification.md"}'`
+   `maestri ask --batch '{"<a>": "<cabeçalho ROUND=N> TASK: revise pelo ângulo security → JOB_DIR/round-N/review-security.md", "<b>": "… api → review-api.md", "<c>": "… data → review-data.md", "<d>": "<cabeçalho SKILL=SKILL_BUILD> … code (Verifier da skill de build SKILL_BUILD + code review) → review-code.md e o relatório de verificação (`.specs/features/<slug>/verification.md` na tlc-spec-lean; o relatório que a skill de build define, nas demais)"}'`
    Timeout do shell grande (revisão leva minutos). Se estourar, **não reenvie**: `ls <FLOOR_PATH>/<JOB_DIR>/round-N/` a cada ~30–60 s e `maestri check` em quem demorar.
 4. **A rodada só termina quando os 4 arquivos existem** e a 1ª linha de cada é `VERDICT: PASS` ou `VERDICT: CHANGES`. Arquivo ausente/1ª linha inválida ⇒ peça **uma** correção àquele revisor; persistindo, trate como escalada (**6b**). Registre os 4 veredictos em `job.json.reviews`.
 5. Dispense os 4 revisores (a Band se desfaz).
@@ -86,7 +102,7 @@ Você é o **único** que escreve `job.json`. Regras de ouro: arquivos são a ve
 
 ## 5. Approver
 
-stage `approve`, status `4/5`. Recrute **Factory Approver**; `maestri ask "<codinome>" "<cabeçalho> TASK: decida APPROVE ou ESCALATE → JOB_DIR/decision.md"`. Leia `decision.md`: 1ª linha `APPROVE` ou `ESCALATE`. Dispense o approver.
+stage `approve`, status `4/5`. Recrute **Factory Approver**; `maestri ask "<codinome>" "<cabeçalho SKILL=SKILL_BUILD> TASK: decida APPROVE ou ESCALATE → JOB_DIR/decision.md"`. Leia `decision.md`: 1ª linha `APPROVE` ou `ESCALATE`. Dispense o approver.
 
 ## 6a. APPROVE → trabalho pronto na branch local (push + MR você faz manualmente)
 

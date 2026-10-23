@@ -34,7 +34,7 @@
     },
     "shell": {
       "allowedCommands": [
-        "python3 \\.kiro/skills/tlc-spec-lean/scripts/.*",
+        "python3 \\.kiro/skills/.*/scripts/.*",
         "git (status|diff|log|show|rev-parse|merge-base|ls-files|blame)( .*)?",
         "git (add|commit|stash)( .*)?",
         "npm run (test|build)( .*)?",
@@ -64,7 +64,7 @@
       {
         "capability": "shell",
         "match": [
-          "python3 .kiro/skills/tlc-spec-lean/scripts/*",
+          "python3 .kiro/skills/*/scripts/*",
           "git status *",
           "git status",
           "git diff *",

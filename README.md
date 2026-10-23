@@ -18,8 +18,11 @@ então vários jobs rodam em paralelo sem colidir. A fábrica trabalha **só loc
 **nunca** faz `git push`, **nunca** abre Merge Request e **nunca** faz merge/land. O trabalho
 fica commitado na branch local; **push para o `origin` e criação do MR são manuais, seus**.
 
-O miolo de cada etapa reaproveita duas skills do **Tech Leads Club**: `tlc-spec-lean`
-(PLAN → CHECKS → BUILD → VERIFY) e `tlc-discover` (descoberta de features cruas).
+Cada fase da fábrica roda uma **skill**, e você escolhe qual. Por padrão usa as do **Tech Leads
+Club** que já vêm no pacote: `tlc-discover` (descoberta de features cruas) e `tlc-spec-lean`
+(PLAN → CHECKS → BUILD → VERIFY, default de plan e build). Como alternativa plugável vem também o
+par `tlc-plan` + `tlc-implement`. Troque a skill de qualquer fase no bloco `factory.phases.*` do
+`AGENTS.md`/`CLAUDE.md` — veja [Skills incluídas](#skills-incluídas).
 
 ---
 
@@ -68,8 +71,8 @@ maestri-software-factory/
 ├── skills/                        # fonte canônica das skills (SKILL.md), igual p/ as duas CLIs
 │   ├── factory/  factory-next/  factory-continue/
 │   ├── factory-approve/  factory-rework/  factory-status/
-│   ├── tlc-spec-lean/             # (Tech Leads Club, CC-BY-4.0)
-│   └── tlc-discover/              # (Tech Leads Club, CC-BY-4.0)
+│   ├── tlc-spec-lean/  tlc-discover/      # (Tech Leads Club, CC-BY-4.0) — defaults das fases
+│   └── tlc-plan/  tlc-implement/          # (Tech Leads Club, CC-BY-4.0) — override plugável de plan+build
 ├── agents/
 │   ├── kiro/                      # agentes Kiro: factory-*.json + prompts/*.md
 │   └── claude/                    # agentes Claude: factory-*.md (subagent format)
@@ -179,7 +182,9 @@ cp CLAUDE.sample.md  /caminho/do/projeto/CLAUDE.md     # Claude Code
 
 Preencha **como montar um checkout novo, como subir o dev server numa porta, e como rodar
 testes/build/lint** — os agentes leem tudo dali. Ajuste o bloco `factory.*` (plan gate, reworks,
-branch base, `release_branch` alvo dos MRs de feat).
+branch base, `release_branch` alvo dos MRs de feat) e, se quiser, o bloco `factory.phases.*` para
+escolher a skill de cada fase (default: `tlc-discover` na descoberta, `tlc-spec-lean` em plan e
+build; alternativa `tlc-plan` + `tlc-implement`).
 
 ## Setup no Maestri
 
@@ -250,8 +255,17 @@ Depois, no Maestro, `/factory-next` cria um Floor por issue selecionada com a br
 | `factory-approve` | finaliza job aprovado/escalado (arquiva e marca; **sem** push/MR/land) |
 | `factory-rework` | devolve ao builder com feedback e reexecuta build/review/approve |
 | `factory-status` | mostra o estado dos jobs (somente leitura) |
-| `tlc-spec-lean` | spec dirigida por obrigações: PLAN → CHECKS → BUILD → VERIFY (TLC) |
-| `tlc-discover` | transforma uma ideia crua em documento de design (TLC) |
+| `tlc-spec-lean` | spec dirigida por obrigações: PLAN → CHECKS → BUILD → VERIFY (TLC) — **default** de plan e build |
+| `tlc-discover` | transforma uma ideia crua em documento de design (TLC) — **default** da descoberta |
+| `tlc-plan` | corta trabalho decidido em tarefas com critérios observáveis (TLC) — alternativa de plan |
+| `tlc-implement` | extrai checklist, constrói e prova com verifier independente (TLC) — alternativa de build |
+
+As quatro últimas são do **Tech Leads Club** e vêm instaladas. A skill de cada fase é configurável
+em `factory.phases.*` (veja [Configuração do projeto](#configuração-do-projeto-agentsmd--claudemd)):
+o default é `tlc-discover` + `tlc-spec-lean`; para o caminho decomposto, troque **plan e build
+juntos** para `tlc-plan` + `tlc-implement`. Em skills sem validador (tlc-plan/tlc-implement) a
+fábrica confere artefato + token e pula os gates de script; o **verify** continua sendo uma
+verificação independente — o Verifier da própria skill de build (o da `tlc-spec-lean` no default).
 
 ## Regras de ouro
 
@@ -266,7 +280,7 @@ Depois, no Maestro, `/factory-next` cria um Floor por issue selecionada com a br
 ## Atribuição e licença
 
 - Código próprio da fábrica: **MIT** (veja [`LICENSE`](LICENSE)).
-- `skills/tlc-spec-lean/` e `skills/tlc-discover/`: **© Tech Leads Club**, licenciadas
-  **CC-BY-4.0** (https://github.com/tech-leads-club). Incluídas aqui sem alterações (exceto
-  reescrita de caminhos na instalação), com a licença e autoria preservadas no frontmatter de cada
-  `SKILL.md`.
+- `skills/tlc-spec-lean/`, `skills/tlc-discover/`, `skills/tlc-plan/` e `skills/tlc-implement/`:
+  **© Tech Leads Club**, licenciadas **CC-BY-4.0** (https://github.com/tech-leads-club). Incluídas
+  aqui sem alterações (exceto reescrita de caminhos na instalação), com a licença e autoria
+  preservadas no frontmatter de cada `SKILL.md`.

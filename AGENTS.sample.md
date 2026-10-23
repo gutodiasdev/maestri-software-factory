@@ -50,6 +50,33 @@ factory.dev_port_base: 8100      # porta do floor = base + número do job
 factory.release_branch: release-v1.0.0.0   # alvo (informativo) dos MRs de feat; ajuste à sua release
 ```
 
+### Skills por fase (configurável)
+
+Cada fase roda uma **skill**. O padrão usa as skills do Tech Leads Club que já vêm empacotadas;
+você pode trocar a skill de qualquer fase pela que preferir, sem abrir mão das que já usa.
+
+```
+factory.phases.discover.skill: tlc-discover   # feature crua → documento de design
+factory.phases.plan.skill:     tlc-spec-lean   # PLAN + CHECKS → plan.md + checks.md
+factory.phases.build.skill:    tlc-spec-lean   # BUILD → build.md (VERIFY = verificação independente, ver abaixo)
+```
+
+- **Default (recomendado):** `tlc-spec-lean` em plan e build. Ela traz validadores Python que a
+  fábrica roda como **gates duros** (`validate_plan.py`, `validate_checks.py`, `check_commit.py`,
+  `validate_verification.py`) e o Verifier independente — é o que sustenta "arquivos são a verdade".
+- **Override decomposto:** troque **plan e build juntos** para `tlc-plan` + `tlc-implement` (o par
+  do catálogo TLC, também empacotado). Elas produzem outro contrato de artefatos (`.tasks/`,
+  `.checks/`) e **não** trazem validadores: a fábrica confere só o artefato + token da fase e
+  **pula os gates de script**. Nunca troque só uma das duas — os artefatos de plan e build precisam
+  casar.
+- **Qualquer skill:** aponte a fase para o nome de uma skill instalada em `.kiro/skills/` (Kiro) ou
+  `.claude/skills/` (Claude). A fábrica injeta `SKILL=<nome>` na tarefa do agente, que lê o
+  `SKILL.md` dela e segue o contrato daquela fase.
+- **Verify** é sempre uma verificação independente (agente novo, nunca o builder), feita pelo revisor
+  de código: na `tlc-spec-lean`, o Verifier dela + `validate_verification.py`; numa skill de build sem
+  validador (ex.: `tlc-implement`), o Verifier da própria skill. Omitir uma linha `factory.phases.*`
+  usa o default acima.
+
 Tipos de branch (vindos do intake ou perguntados): `feat/<descrição>`, `release-v1.x.x.x`,
 `hotfix-v1.x.x.x`. Alvo do MR (que **você** abre manualmente): `feat → release`,
 `release → main`, `hotfix → main`.
