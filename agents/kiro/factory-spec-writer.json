@@ -1,0 +1,126 @@
+{
+  "name": "factory-spec-writer",
+  "description": "Factory: escreve plan.md + checks.md (tlc-spec-lean PLAN e CHECKS) e o resumo SPEC: READY.",
+  "prompt": "file://./prompts/factory-spec-writer.md",
+  "model": "claude-opus-4.8",
+  "tools": [
+    "glob",
+    "grep",
+    "read",
+    "shell",
+    "write"
+  ],
+  "allowedTools": [
+    "read",
+    "grep",
+    "glob"
+  ],
+  "toolsSettings": {
+    "write": {
+      "allowedPaths": [
+        ".specs/**"
+      ]
+    },
+    "read": {
+      "deniedPaths": [
+        ".env",
+        ".env.local",
+        ".env.development",
+        ".env.production",
+        ".env.test"
+      ]
+    },
+    "shell": {
+      "allowedCommands": [
+        "python3 \\.kiro/skills/tlc-spec-lean/scripts/.*",
+        "git (status|diff|log|show|rev-parse|merge-base|ls-files|blame)( .*)?",
+        "maestri (ask|list|check|floor status).*"
+      ],
+      "deniedCommands": [
+        "git push.*",
+        "git reset --hard.*",
+        "git clean.*",
+        "git checkout -- .*",
+        "rm -rf .*",
+        "git branch -d.*",
+        "git branch -D.*"
+      ],
+      "autoAllowReadonly": true
+    }
+  },
+  "resources": [
+    "file://AGENTS.md",
+    "skill://~/.agents/skills/maestri/SKILL.md",
+    "skill://.kiro/skills/tlc-spec-lean/SKILL.md",
+    "skill://.kiro/skills/tlc-discover/SKILL.md"
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": [
+          "python3 .kiro/skills/tlc-spec-lean/scripts/*",
+          "git status *",
+          "git status",
+          "git diff *",
+          "git diff",
+          "git log *",
+          "git log",
+          "git show *",
+          "git show",
+          "git rev-parse *",
+          "git rev-parse",
+          "git merge-base *",
+          "git merge-base",
+          "git ls-files *",
+          "git ls-files",
+          "git blame *",
+          "git blame",
+          "maestri ask*",
+          "maestri list*",
+          "maestri check*",
+          "maestri floor status*"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "git push*",
+          "git reset --hard*",
+          "git clean*",
+          "git checkout -- *",
+          "rm -rf *",
+          "git branch -d*",
+          "git branch -D*"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_read",
+        "match": [
+          ".env",
+          ".env.local",
+          ".env.development",
+          ".env.production",
+          ".env.test"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          ".specs/**"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      }
+    ],
+    "policies": [
+      "read-only-shell"
+    ]
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "name": "factory-issue-fetcher",
+  "description": "Factory: lista issues/work items atribuidos a mim no GitLab (glab, somente leitura) e escreve .specs/factory/backlog.md. Roda no Ground.",
+  "prompt": "file://./prompts/factory-issue-fetcher.md",
+  "model": "claude-opus-4.8",
+  "tools": [
+    "glob",
+    "grep",
+    "read",
+    "shell",
+    "write"
+  ],
+  "allowedTools": [
+    "read",
+    "grep",
+    "glob"
+  ],
+  "toolsSettings": {
+    "write": {
+      "allowedPaths": [
+        ".specs/factory/**"
+      ]
+    },
+    "read": {
+      "deniedPaths": [
+        ".env",
+        ".env.local",
+        ".env.development",
+        ".env.production",
+        ".env.test"
+      ]
+    },
+    "shell": {
+      "allowedCommands": [
+        "glab (auth status|issue list|issue view|api)( .*)?",
+        "git (status|diff|log|show|rev-parse|branch|ls-remote)( .*)?",
+        "maestri (ask|list|check|note (read|write|edit)|floor status).*",
+        "(ls|cat|test|mkdir -p|wc|date|jq)( .*)?"
+      ],
+      "deniedCommands": [
+        "glab (mr|issue) (create|update|close|delete|note|merge).*",
+        "glab api .*(-X|--method) (POST|PUT|PATCH|DELETE).*",
+        "git push.*",
+        "git reset --hard.*",
+        "git clean.*",
+        "rm -rf .*"
+      ],
+      "autoAllowReadonly": true
+    }
+  },
+  "resources": [
+    "file://AGENTS.md",
+    "skill://~/.agents/skills/maestri/SKILL.md"
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": [
+          "glab auth status*",
+          "glab issue list*",
+          "glab issue view*",
+          "glab api issues*",
+          "glab api graphql*",
+          "git status*",
+          "git diff*",
+          "git log*",
+          "git show*",
+          "git rev-parse*",
+          "git branch*",
+          "git ls-remote*",
+          "maestri ask*",
+          "maestri list*",
+          "maestri check*",
+          "maestri note read*",
+          "maestri note write*",
+          "maestri note edit*",
+          "maestri floor status*",
+          "ls*",
+          "cat*",
+          "test*",
+          "mkdir -p*",
+          "wc*",
+          "date*",
+          "jq*"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "glab mr create*",
+          "glab mr merge*",
+          "glab issue create*",
+          "glab issue close*",
+          "git push*",
+          "git reset --hard*",
+          "git clean*",
+          "rm -rf *"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_read",
+        "match": [
+          ".env",
+          ".env.local",
+          ".env.development",
+          ".env.production",
+          ".env.test"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          ".specs/factory/**"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      }
+    ],
+    "policies": [
+      "read-only-shell"
+    ]
+  }
+}

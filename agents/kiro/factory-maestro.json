@@ -1,0 +1,176 @@
+{
+  "name": "factory-maestro",
+  "description": "Factory: orquestrador (rode no Ground com Maestro Mode). Executa o laco /factory com a CLI maestri.",
+  "prompt": "file://./prompts/factory-maestro.md",
+  "model": "claude-opus-4.8",
+  "tools": [
+    "glob",
+    "grep",
+    "read",
+    "shell",
+    "write"
+  ],
+  "allowedTools": [
+    "read",
+    "grep",
+    "glob"
+  ],
+  "toolsSettings": {
+    "write": {
+      "allowedPaths": [
+        ".specs/factory/**",
+        "**/.specs/factory/**"
+      ]
+    },
+    "read": {
+      "deniedPaths": [
+        ".env",
+        ".env.local",
+        ".env.development",
+        ".env.production",
+        ".env.test"
+      ]
+    },
+    "shell": {
+      "allowedCommands": [
+        "git (status|diff|log|show|rev-parse|merge-base|ls-files|blame)( .*)?",
+        "git branch( --show-current| -a| -r| -v)?",
+        "maestri (list|ask|check|recruit|dismiss|connect|band|notify|arrange|debug).*",
+        "maestri note (create|read|write|edit|stack|unstack).*",
+        "maestri (preset|role) (list|show).*",
+        "maestri floor (create|list|status|unload).*",
+        "(ls|cat|test|mkdir -p|cp -r|wc|date|sleep [0-9]+)( .*)?",
+        "python3 \\.kiro/skills/tlc-spec-lean/scripts/.*"
+      ],
+      "deniedCommands": [
+        "git push.*",
+        "git reset --hard.*",
+        "git clean.*",
+        "git checkout -- .*",
+        "rm -rf .*",
+        "git branch -d.*",
+        "git branch -D.*"
+      ],
+      "autoAllowReadonly": true
+    }
+  },
+  "resources": [
+    "file://AGENTS.md",
+    "skill://~/.agents/skills/maestri/SKILL.md",
+    "skill://.kiro/skills/factory*/SKILL.md",
+    "skill://.kiro/skills/tlc-spec-lean/SKILL.md",
+    "skill://~/.agents/skills/maestri-manager/SKILL.md",
+    "skill://~/.agents/skills/maestri-workspace/SKILL.md",
+    "skill://~/.agents/skills/maestri-routines/SKILL.md"
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": [
+          "git status *",
+          "git status",
+          "git diff *",
+          "git diff",
+          "git log *",
+          "git log",
+          "git show *",
+          "git show",
+          "git rev-parse *",
+          "git rev-parse",
+          "git merge-base *",
+          "git merge-base",
+          "git ls-files *",
+          "git ls-files",
+          "git blame *",
+          "git blame",
+          "git branch --show-current",
+          "git branch -a",
+          "git branch -r",
+          "git branch -v",
+          "git branch",
+          "maestri list*",
+          "maestri ask*",
+          "maestri check*",
+          "maestri recruit*",
+          "maestri dismiss*",
+          "maestri connect*",
+          "maestri band*",
+          "maestri notify*",
+          "maestri arrange*",
+          "maestri debug*",
+          "maestri note create*",
+          "maestri note read*",
+          "maestri note write*",
+          "maestri note edit*",
+          "maestri note stack*",
+          "maestri note unstack*",
+          "maestri preset list*",
+          "maestri preset show*",
+          "maestri role list*",
+          "maestri role show*",
+          "maestri floor create*",
+          "maestri floor list*",
+          "maestri floor status*",
+          "maestri floor unload*",
+          "ls *",
+          "ls",
+          "cat *",
+          "cat",
+          "test *",
+          "test",
+          "mkdir -p *",
+          "mkdir -p",
+          "cp -r *",
+          "cp -r",
+          "wc *",
+          "wc",
+          "date *",
+          "date",
+          "sleep *",
+          "python3 .kiro/skills/tlc-spec-lean/scripts/*"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "git push*",
+          "git reset --hard*",
+          "git clean*",
+          "git checkout -- *",
+          "rm -rf *",
+          "git branch -d*",
+          "git branch -D*"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_read",
+        "match": [
+          ".env",
+          ".env.local",
+          ".env.development",
+          ".env.production",
+          ".env.test"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          ".specs/factory/**",
+          "**/.specs/factory/**"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      }
+    ],
+    "policies": [
+      "read-only-shell"
+    ]
+  }
+}

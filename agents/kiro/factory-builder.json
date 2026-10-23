@@ -1,0 +1,147 @@
+{
+  "name": "factory-builder",
+  "description": "Factory: implementa a spec na branch do floor (tlc-spec-lean BUILD). Testes nascem dos checks.",
+  "prompt": "file://./prompts/factory-builder.md",
+  "model": "claude-opus-4.8",
+  "tools": [
+    "glob",
+    "grep",
+    "read",
+    "shell",
+    "write"
+  ],
+  "allowedTools": [
+    "read",
+    "grep",
+    "glob"
+  ],
+  "toolsSettings": {
+    "write": {
+      "allowedPaths": [
+        "src/**",
+        "test/**",
+        ".specs/**"
+      ]
+    },
+    "read": {
+      "deniedPaths": [
+        ".env",
+        ".env.local",
+        ".env.development",
+        ".env.production",
+        ".env.test"
+      ]
+    },
+    "shell": {
+      "allowedCommands": [
+        "python3 \\.kiro/skills/tlc-spec-lean/scripts/.*",
+        "git (status|diff|log|show|rev-parse|merge-base|ls-files|blame)( .*)?",
+        "git (add|commit|stash)( .*)?",
+        "npm run (test|build)( .*)?",
+        "npx jest( .*)?",
+        "npm run lint( .*)?",
+        "maestri (ask|list|check|floor status).*"
+      ],
+      "deniedCommands": [
+        "git push.*",
+        "git reset --hard.*",
+        "git clean.*",
+        "git checkout -- .*",
+        "rm -rf .*",
+        "git branch -d.*",
+        "git branch -D.*"
+      ],
+      "autoAllowReadonly": true
+    }
+  },
+  "resources": [
+    "file://AGENTS.md",
+    "skill://~/.agents/skills/maestri/SKILL.md",
+    "skill://.kiro/skills/tlc-spec-lean/SKILL.md"
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": [
+          "python3 .kiro/skills/tlc-spec-lean/scripts/*",
+          "git status *",
+          "git status",
+          "git diff *",
+          "git diff",
+          "git log *",
+          "git log",
+          "git show *",
+          "git show",
+          "git rev-parse *",
+          "git rev-parse",
+          "git merge-base *",
+          "git merge-base",
+          "git ls-files *",
+          "git ls-files",
+          "git blame *",
+          "git blame",
+          "git add *",
+          "git add",
+          "git commit *",
+          "git commit",
+          "git stash *",
+          "git stash",
+          "npm run test *",
+          "npm run test",
+          "npm run build *",
+          "npm run build",
+          "npx jest *",
+          "npx jest",
+          "npm run lint *",
+          "npm run lint",
+          "maestri ask*",
+          "maestri list*",
+          "maestri check*",
+          "maestri floor status*"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": [
+          "git push*",
+          "git reset --hard*",
+          "git clean*",
+          "git checkout -- *",
+          "rm -rf *",
+          "git branch -d*",
+          "git branch -D*"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_read",
+        "match": [
+          ".env",
+          ".env.local",
+          ".env.development",
+          ".env.production",
+          ".env.test"
+        ],
+        "effect": "deny"
+      },
+      {
+        "capability": "fs_write",
+        "match": [
+          "src/**",
+          "test/**",
+          ".specs/**"
+        ],
+        "effect": "allow"
+      },
+      {
+        "capability": "fs_read",
+        "effect": "allow"
+      }
+    ],
+    "policies": [
+      "read-only-shell"
+    ]
+  }
+}

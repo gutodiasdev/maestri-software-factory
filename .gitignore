@@ -1,0 +1,8 @@
+# runtime da fábrica (estado, não configuração)
+.specs/
+# nada de segredos
+.env
+.env.*
+# ruído de SO/editor
+.DS_Store
+*.log

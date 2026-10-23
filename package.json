@@ -1,0 +1,39 @@
+{
+  "name": "maestri-software-factory",
+  "version": "0.1.2",
+  "description": "Fábrica de software visual no Maestri (Kiro CLI ou Claude Code): instala as skills e agentes da factory em .kiro/ ou .claude/.",
+  "bin": {
+    "maestri-software-factory": "bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "skills/",
+    "agents/",
+    "scripts/",
+    "AGENTS.sample.md",
+    "CLAUDE.sample.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "type": "commonjs",
+  "license": "MIT",
+  "author": "Augusto Dias (gutodiasdev)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gutodiasdev/maestri-software-factory.git"
+  },
+  "keywords": [
+    "maestri",
+    "kiro",
+    "kiro-cli",
+    "claude",
+    "claude-code",
+    "software-factory",
+    "skills",
+    "agents",
+    "ai-agents"
+  ]
+}
