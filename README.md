@@ -94,15 +94,34 @@ Sem clonar nada, direto do GitHub (requer Node ≥ 16):
 
 ```bash
 # Kiro CLI (no projeto atual):
-npx -y "github:gutodiasdev/maestri-software-factory#v0.1.2" -- --target kiro
+npx -y "github:gutodiasdev/maestri-software-factory#v0.1.3" -- --target kiro
 # Claude Code:
-npx -y "github:gutodiasdev/maestri-software-factory#v0.1.2" -- --target claude
+npx -y "github:gutodiasdev/maestri-software-factory#v0.1.3" -- --target claude
 # opções: --global (instala em ~/.kiro|~/.claude) · --dest <dir> · --dry-run (prévia)
 ```
 
 Isso copia as skills para `.kiro/skills/` (ou `.claude/skills/`) e os agentes para `.kiro/agents/`
-(ou `.claude/agents/`). Sem a tag `#v0.1.2`, usa a última versão da branch `main`. As seções
+(ou `.claude/agents/`). Sem a tag `#v0.1.3`, usa a última versão da branch `main`. As seções
 abaixo mostram a instalação manual equivalente.
+
+### Atualizar e remover
+
+A instalação registra um manifesto em `.kiro/.factory-manifest.json` (ou `.claude/…`) com a versão
+e a lista de arquivos. Com ele, atualizar e remover são limpos — **sem** tocar no seu
+`AGENTS.md`/`CLAUDE.md` nem em outras skills/agentes seus:
+
+```bash
+# atualizar (troque a tag pela versão nova; remove arquivos que saíram da versão anterior):
+npx -y "github:gutodiasdev/maestri-software-factory#v0.1.3" -- update --target kiro
+# remover só o que a fábrica instalou:
+npx -y "github:gutodiasdev/maestri-software-factory#v0.1.3" -- uninstall --target kiro
+# ver a versão do pacote:
+npx -y "github:gutodiasdev/maestri-software-factory" -- --version
+```
+
+`install` (padrão) sobrescreve os arquivos gerenciados; `update` faz o mesmo **e** apaga órfãos de
+versões anteriores; `uninstall` remove apenas o que a fábrica instalou. Todos aceitam `--global` e
+`--dest <dir>`.
 
 ## Instalação (Kiro CLI)
 
